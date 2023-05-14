@@ -1,17 +1,22 @@
-provider "aws" {
-  region = local.region
-}
+####################################################
+# Local variables to configure your environment
+####################################################
 
 locals {
   prefix     = "ctfd"
+  ecs_vcpu   = "256"
+  ecs_memory = "512"
   rds_user   = "ctfd_admin"
   rds_pass   = "StrongPasswordHere"
   region     = "us-east-1"
-  ctfd_image = "ctfd/ctfd:3.5.1"
+  ctfd_image = "ctfd/ctfd:3.5.1" #currently there is a bug in 3.5.2 that while patched isn't updated in the docker image yet
   ctfd_secret_key = "JusT@bunch0fR@nd0mStuff!" #This is needed if you will be running more than one front end instance
 }
 
 
+provider "aws" {
+  region = local.region
+}
 
 ####################################################
 # Setup VPC, Subnets and Internet GW for CTFd
@@ -214,8 +219,8 @@ resource "aws_ecs_task_definition" "this" {
   family                   = "${local.prefix}-task"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = "256"
-  memory                   = "512"
+  cpu                      = "${local.ecs_vcpu}"
+  memory                   = "${local.ecs_memory}"
 
   execution_role_arn = aws_iam_role.ecs_execution_role.arn
 
@@ -342,7 +347,7 @@ resource "aws_security_group" "rds" {
 
 resource "aws_db_instance" "this" {
   allocated_storage          = 20
-  storage_type               = "gp2"
+  storage_type               = "gp3"
   engine                     = "mysql"
   engine_version             = "8.0"
   instance_class             = "db.t2.micro"
@@ -355,7 +360,7 @@ resource "aws_db_instance" "this" {
   skip_final_snapshot        = true
   publicly_accessible        = false
   multi_az                   = false
-  backup_retention_period    = 0
+  backup_retention_period    = 0 # Disabled
   auto_minor_version_upgrade = true
 
   tags = {
