@@ -4,8 +4,9 @@
 
 locals {
   prefix     = "ctfd"
-  ecs_vcpu   = "256"
-  ecs_memory = "512"
+  ecs_vcpu   = "1024"
+  ecs_memory = "2048"
+  ecs_desired_count = 2
   rds_user   = "ctfd_admin"
   rds_pass   = "StrongPasswordHere"
   region     = "us-east-1"
@@ -300,7 +301,7 @@ resource "aws_ecs_service" "this" {
   name            = "${local.prefix}-service"
   cluster         = aws_ecs_cluster.this.id
   task_definition = aws_ecs_task_definition.this.arn
-  desired_count   = 1
+  desired_count   = "${local.ecs_desired_count}"
   launch_type     = "FARGATE"
 
   network_configuration {
